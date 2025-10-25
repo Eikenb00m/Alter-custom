@@ -19,8 +19,18 @@ import org.alter.plugins.content.interfaces.equipstats.EquipmentStats.bonusTextM
 object Bank {
     const val BANK_INTERFACE_ID = 12
     const val BANK_MAINTAB_COMPONENT = 13
+    const val BANK_TABS_COMPONENT = 11
+    const val BANK_CAPACITY_LAYER_COMPONENT = 7
+    const val BANK_CAPACITY_TEXT_COMPONENT = 9
+    const val BANK_TOOLTIP_COMPONENT = 130
+    const val BANK_INCINERATOR_CONFIRM_COMPONENT = 50
+    const val BANK_TAB_DISPLAY_COMPONENT = 140
+
     const val INV_INTERFACE_ID = 15
     const val INV_INTERFACE_CHILD = 3
+    const val INV_WORN_COMPONENT = 4
+    const val INV_LOOTING_BAG_COMPONENT = 11
+    const val INV_LEAGUE_SECOND_INV_COMPONENT = 18
 
     const val WITHDRAW_AS_VARBIT = 3958
     const val REARRANGE_MODE_VARBIT = 3959
@@ -139,17 +149,18 @@ object Bank {
         p.openInterface(BANK_INTERFACE_ID, InterfaceDestination.MAIN_SCREEN)
         p.openInterface(INV_INTERFACE_ID, InterfaceDestination.TAB_AREA)
         p.setVarp(262, -1)
-        p.setComponentText(interfaceId = BANK_INTERFACE_ID, component = 9, text = p.bank.capacity.toString())
+        val bankCapacity = p.bank.capacity
+        p.setComponentText(interfaceId = BANK_INTERFACE_ID, component = BANK_CAPACITY_TEXT_COMPONENT, text = bankCapacity.toString())
         p.runClientScript(
             ClientScript(id = 1495),
             "Non-members' capacity: 400<br>Become a member for 400 more.<br>A banker can sell you up to 360 more.<br>+20 for your PIN.<br>Set an Authenticator for 20 more.",
-            786439,
-            786549,
+            packComponent(BANK_INTERFACE_ID, BANK_CAPACITY_LAYER_COMPONENT),
+            packComponent(BANK_INTERFACE_ID, BANK_TOOLTIP_COMPONENT),
         )
         sendBonuses(p)
         p.setInterfaceEvents(
             interfaceId = INV_INTERFACE_ID,
-            component = 3,
+            component = INV_INTERFACE_CHILD,
             0..27,
             InterfaceEvent.ClickOp1,
             InterfaceEvent.ClickOp2,
@@ -164,21 +175,18 @@ object Bank {
             InterfaceEvent.DRAG_DEPTH1,
             InterfaceEvent.DragTargetable,
         )
-        p.setInterfaceEvents(interfaceId = BANK_INTERFACE_ID, component = 47, 1..1200, InterfaceEvent.ClickOp1)
+        if (bankCapacity > 0) {
+            p.setInterfaceEvents(
+                interfaceId = BANK_INTERFACE_ID,
+                component = BANK_INCINERATOR_CONFIRM_COMPONENT,
+                1..bankCapacity,
+                InterfaceEvent.ClickOp1,
+            )
+        }
         p.setInterfaceEvents(
             interfaceId = INV_INTERFACE_ID,
-            component = 19,
+            component = INV_LOOTING_BAG_COMPONENT,
             0..27,
-            InterfaceEvent.ClickOp1,
-            InterfaceEvent.ClickOp2,
-            InterfaceEvent.ClickOp3,
-            InterfaceEvent.ClickOp4,
-            InterfaceEvent.ClickOp10,
-        )
-        p.setInterfaceEvents(
-            interfaceId = BANK_INTERFACE_ID,
-            component = 13,
-            0..1199,
             InterfaceEvent.ClickOp1,
             InterfaceEvent.ClickOp2,
             InterfaceEvent.ClickOp3,
@@ -186,16 +194,44 @@ object Bank {
             InterfaceEvent.ClickOp5,
             InterfaceEvent.ClickOp6,
             InterfaceEvent.ClickOp7,
-            InterfaceEvent.ClickOp8,
-            InterfaceEvent.ClickOp9,
             InterfaceEvent.ClickOp10,
-            InterfaceEvent.DRAG_DEPTH2,
-            InterfaceEvent.DragTargetable,
         )
-        p.setInterfaceEvents(interfaceId = BANK_INTERFACE_ID, 13, 1218..1227, InterfaceEvent.DragTargetable)
+        if (bankCapacity > 0) {
+            val bankSlotRange = 0 until bankCapacity
+            val lastBankSlot = bankCapacity - 1
+            p.setInterfaceEvents(
+                interfaceId = BANK_INTERFACE_ID,
+                component = BANK_MAINTAB_COMPONENT,
+                bankSlotRange,
+                InterfaceEvent.ClickOp1,
+                InterfaceEvent.ClickOp2,
+                InterfaceEvent.ClickOp3,
+                InterfaceEvent.ClickOp4,
+                InterfaceEvent.ClickOp5,
+                InterfaceEvent.ClickOp6,
+                InterfaceEvent.ClickOp7,
+                InterfaceEvent.ClickOp8,
+                InterfaceEvent.ClickOp9,
+                InterfaceEvent.ClickOp10,
+                InterfaceEvent.DRAG_DEPTH2,
+                InterfaceEvent.DragTargetable,
+            )
+            p.setInterfaceEvents(
+                interfaceId = BANK_INTERFACE_ID,
+                component = BANK_MAINTAB_COMPONENT,
+                (lastBankSlot + 10)..(lastBankSlot + 18),
+                InterfaceEvent.ClickOp1,
+            )
+            p.setInterfaceEvents(
+                interfaceId = BANK_INTERFACE_ID,
+                component = BANK_MAINTAB_COMPONENT,
+                (lastBankSlot + 19)..(lastBankSlot + 28),
+                InterfaceEvent.DragTargetable,
+            )
+        }
         p.setInterfaceEvents(
             interfaceId = BANK_INTERFACE_ID,
-            11,
+            BANK_TABS_COMPONENT,
             10..10,
             InterfaceEvent.ClickOp1,
             InterfaceEvent.ClickOp7,
@@ -203,7 +239,7 @@ object Bank {
         )
         p.setInterfaceEvents(
             interfaceId = BANK_INTERFACE_ID,
-            11,
+            BANK_TABS_COMPONENT,
             11..19,
             InterfaceEvent.ClickOp1,
             InterfaceEvent.ClickOp6,
@@ -213,23 +249,32 @@ object Bank {
         )
         p.setInterfaceEvents(
             interfaceId = INV_INTERFACE_ID,
-            4,
+            component = INV_WORN_COMPONENT,
             0..27,
             InterfaceEvent.ClickOp1,
+            InterfaceEvent.ClickOp9,
             InterfaceEvent.ClickOp10,
             InterfaceEvent.DRAG_DEPTH1,
             InterfaceEvent.DragTargetable,
         )
-        p.setInterfaceEvents(interfaceId = BANK_INTERFACE_ID, component = 50, 0..3, InterfaceEvent.ClickOp1)
         p.setInterfaceEvents(
             interfaceId = INV_INTERFACE_ID,
-            component = 13,
+            component = INV_LEAGUE_SECOND_INV_COMPONENT,
             0..27,
             InterfaceEvent.ClickOp1,
             InterfaceEvent.ClickOp2,
             InterfaceEvent.ClickOp3,
             InterfaceEvent.ClickOp4,
+            InterfaceEvent.ClickOp5,
+            InterfaceEvent.ClickOp6,
+            InterfaceEvent.ClickOp7,
             InterfaceEvent.ClickOp10,
+        )
+        p.setInterfaceEvents(
+            interfaceId = BANK_INTERFACE_ID,
+            component = BANK_TAB_DISPLAY_COMPONENT,
+            0..8,
+            InterfaceEvent.ClickOp1,
         )
         p.setVarbit(BANK_YOUR_LOOT_VARBIT, 0)
     }
@@ -237,37 +282,47 @@ object Bank {
     fun sendBonuses(p: Player) {
 
         with(p) {
-            setBankEquipCompText(component = 98, text = bonusTextMap()[0])
-            setBankEquipCompText(component = 99, text = bonusTextMap()[1])
-            setBankEquipCompText(component = 100, text = bonusTextMap()[2])
-            setBankEquipCompText(component = 101, text = bonusTextMap()[3])
-            setBankEquipCompText(component = 102, text = bonusTextMap()[4])
-            setBankEquipCompText(component = 132, text = bonusTextMap()[5])
-            setBankEquipCompText(component = 133, text = bonusTextMap()[6])
-            setBankEquipCompText(component = 104, text = bonusTextMap()[7])
-            setBankEquipCompText(component = 105, text = bonusTextMap()[8])
-            setBankEquipCompText(component = 106, text = bonusTextMap()[9])
-            setBankEquipCompText(component = 108, text = bonusTextMap()[10])
-            setBankEquipCompText(component = 107, text = bonusTextMap()[11])
-            setBankEquipCompText(component = 110, text = bonusTextMap()[12])
-            setBankEquipCompText(component = 111, text = bonusTextMap()[13])
-            setBankEquipCompText(component = 112, text = bonusTextMap()[14])
-            setBankEquipCompText(component = 113, text = bonusTextMap()[15])
-            setBankEquipCompText(component = 115, text = bonusTextMap()[16])
-            setBankEquipCompText(component = 116, text = bonusTextMap()[17])
-
+            BANK_BONUS_COMPONENTS.forEachIndexed { index, component ->
+                setBankEquipCompText(component = component, text = bonusTextMap()[index])
+            }
         }
         p.runClientScript(
             ClientScript(id = 7065),
-            786549,
-            786538,
+            packComponent(BANK_INTERFACE_ID, BANK_TOOLTIP_COMPONENT),
+            packComponent(BANK_INTERFACE_ID, BANK_UNDEAD_BONUS_COMPONENT),
             "Increases your effective accuracy and damage against undead creatures. For multi-target Ranged and Magic attacks, this applies only to the primary target. It does not stack with the Slayer multiplier.",
         )
-        p.setComponentText(interfaceId = BANK_INTERFACE_ID, component = 107, text = "Slayer: 0%") // @TODO
+        p.setComponentText(interfaceId = BANK_INTERFACE_ID, component = BANK_SLAYER_BONUS_COMPONENT, text = "Slayer: 0%") // @TODO
     }
     private fun Player.setBankEquipCompText(component: Int, text: String) {
         this.setComponentText(interfaceId = BANK_INTERFACE_ID, component = component, text = text)
     }
+
+    private fun packComponent(interfaceId: Int, componentId: Int): Int = (interfaceId shl 16) or componentId
+
+    private val BANK_BONUS_COMPONENTS = intArrayOf(
+        101,
+        102,
+        103,
+        104,
+        105,
+        135,
+        136,
+        107,
+        108,
+        109,
+        111,
+        110,
+        113,
+        114,
+        115,
+        116,
+        118,
+        119,
+    )
+
+    private const val BANK_UNDEAD_BONUS_COMPONENT = 118
+    private const val BANK_SLAYER_BONUS_COMPONENT = 119
 
     fun ItemContainer.removePlaceholder(
         world: World,
