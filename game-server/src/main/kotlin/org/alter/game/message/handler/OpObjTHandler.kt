@@ -4,8 +4,13 @@ import net.rsprot.protocol.game.incoming.objs.OpObjT
 import org.alter.game.model.move.ObjectPathAction
 import org.alter.game.message.MessageHandler
 import org.alter.game.model.Tile
+import org.alter.game.model.attr.INTERACTING_ITEM
+import org.alter.game.model.attr.INTERACTING_OBJ_ATTR
 import org.alter.game.model.entity.Client
+import org.alter.game.model.entity.Entity
+import org.alter.game.model.entity.Player
 import org.alter.game.model.item.Item
+import org.alter.game.plugin.Plugin
 import org.alter.game.pluginnew.event.impl.ItemOnGroundItemEvent
 
 class OpObjTHandler : MessageHandler<OpObjT> {
@@ -36,9 +41,31 @@ class OpObjTHandler : MessageHandler<OpObjT> {
             message.x,
             message.z
         )
-        
+
+
+
         val item = client.inventory[slot] ?: return
-        client.executePlugin(ObjectPathAction.itemOnObjectPlugin)
-        ItemOnGroundItemEvent(item, slot, message.id, tile, client).post()
+        client.executePlugin(itemOnObjectPlugin)
+        //ItemOnGroundItemEvent(item, slot, message.id, tile, client).post()
     }
+
+    val itemOnObjectPlugin: Plugin.() -> Unit = {
+        val player = ctx as Player
+
+        val item = player.attr[INTERACTING_ITEM]!!.get()!!
+        val obj = player.attr[INTERACTING_OBJ_ATTR]!!.get()!!
+        val lineOfSightRange = player.world.plugins.getObjInteractionDistance(obj.id)
+
+        ObjectPathAction.walk(player, obj, lineOfSightRange) {
+            if (!player.world.plugins.executeItemOnObject(player, obj.getTransform(player), item.id)) {
+                player.writeMessage(Entity.NOTHING_INTERESTING_HAPPENS)
+                if (player.world.devContext.debugObjects) {
+                    player.writeMessage(
+                        "Unhandled item on object: [item=$item, id=${obj.id}, type=${obj.type}, rot=${obj.rot}, x=${obj.tile.x}, y=${obj.tile.z}]",
+                    )
+                }
+            }
+        }
+    }
+
 }

@@ -60,43 +60,7 @@ object ObjectPathAction {
         }
     }
 
-    val itemOnObjectPlugin: Plugin.() -> Unit = {
-        val player = ctx as Player
 
-        val item = player.attr[INTERACTING_ITEM]!!.get()!!
-        val obj = player.attr[INTERACTING_OBJ_ATTR]!!.get()!!
-        val lineOfSightRange = player.world.plugins.getObjInteractionDistance(obj.id)
-
-        walk(player, obj, lineOfSightRange) {
-            if (!player.world.plugins.executeItemOnObject(player, obj.getTransform(player), item.id)) {
-                player.writeMessage(Entity.NOTHING_INTERESTING_HAPPENS)
-                if (player.world.devContext.debugObjects) {
-                    player.writeMessage(
-                        "Unhandled item on object: [item=$item, id=${obj.id}, type=${obj.type}, rot=${obj.rot}, x=${obj.tile.x}, y=${obj.tile.z}]",
-                    )
-                }
-            }
-        }
-    }
-
-    val objectInteractPlugin: Plugin.() -> Unit = {
-        val player = ctx as Player
-
-        val obj = player.attr[INTERACTING_OBJ_ATTR]!!.get()!!
-        val opt = player.attr[INTERACTING_OPT_ATTR]
-        val lineOfSightRange = player.world.plugins.getObjInteractionDistance(obj.id)
-
-        walk(player, obj, lineOfSightRange) {
-            if (!player.world.plugins.executeObject(player, obj.getTransform(player), opt!!)) {
-                player.writeMessage(Entity.NOTHING_INTERESTING_HAPPENS)
-                if (player.world.devContext.debugObjects) {
-                    player.writeMessage(
-                        "Unhandled object action: [opt=$opt, id=${obj.id}, type=${obj.type}, rot=${obj.rot}, x=${obj.tile.x}, y=${obj.tile.z}]",
-                    )
-                }
-            }
-        }
-    }
 
     private suspend fun QueueTask.walkTo(
         pawn: Pawn,

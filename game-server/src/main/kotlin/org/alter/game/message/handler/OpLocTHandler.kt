@@ -9,12 +9,17 @@ import org.alter.game.model.attr.INTERACTING_ITEM
 import org.alter.game.model.attr.INTERACTING_ITEM_SLOT
 import org.alter.game.model.attr.INTERACTING_OBJ_ATTR
 import org.alter.game.model.entity.Client
+import org.alter.game.model.entity.Entity
 import org.alter.game.model.entity.GameObject
 import org.alter.game.model.entity.Player
+import org.alter.game.model.move.ObjectPathAction.walk
 import org.alter.game.model.move.moveTo
 import org.alter.game.model.move.stopMovement
 import org.alter.game.model.priv.Privilege
+import org.alter.game.pluginnew.MenuOption
+import org.alter.game.pluginnew.event.EventManager
 import org.alter.game.pluginnew.event.impl.ItemOnObject
+import org.alter.game.pluginnew.event.impl.ObjectClickEvent
 import java.lang.ref.WeakReference
 
 class OpLocTHandler : MessageHandler<OpLocT> {
@@ -76,8 +81,21 @@ class OpLocTHandler : MessageHandler<OpLocT> {
         client.attr[INTERACTING_ITEM_SLOT] = slot
         client.attr[INTERACTING_OBJ_ATTR] = WeakReference(obj)
 
-        client.executePlugin(ObjectPathAction.itemOnObjectPlugin)
-        ItemOnObject(item,obj,slot,client).post()
 
+        val lineOfSightRange = client.world.plugins.getObjInteractionDistance(obj.id)
+
+        walk(client, obj, lineOfSightRange) {
+            val handledByNewSystem = EventManager.postWithResult( ItemOnObject(item,obj,slot,client))
+            val handledByOldSystem = client.world.plugins.executeItemOnObject(client, obj.getTransform(client), item.id)
+
+            if (!handledByNewSystem && !handledByOldSystem) {
+                client.writeMessage(Entity.NOTHING_INTERESTING_HAPPENS)
+                if (client.world.devContext.debugObjects) {
+                    client.writeMessage(
+                        "Unhandled item on object: [item=$item, id=${obj.id}, type=${obj.type}, rot=${obj.rot}, x=${obj.tile.x}, y=${obj.tile.z}]",
+                    )
+                }
+            }
+        }
     }
 }

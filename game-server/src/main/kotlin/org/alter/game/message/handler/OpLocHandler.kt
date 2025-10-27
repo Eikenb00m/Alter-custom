@@ -1,19 +1,21 @@
 package org.alter.game.message.handler
 
 import net.rsprot.protocol.game.incoming.locs.OpLoc
-import org.alter.game.model.move.ObjectPathAction
 import org.alter.game.message.MessageHandler
 import org.alter.game.model.EntityType
 import org.alter.game.model.Tile
 import org.alter.game.model.attr.INTERACTING_OBJ_ATTR
 import org.alter.game.model.attr.INTERACTING_OPT_ATTR
 import org.alter.game.model.entity.Client
+import org.alter.game.model.entity.Entity
 import org.alter.game.model.entity.GameObject
 import org.alter.game.model.entity.Player
+import org.alter.game.model.move.ObjectPathAction.walk
 import org.alter.game.model.move.moveTo
 import org.alter.game.model.move.stopMovement
 import org.alter.game.model.priv.Privilege
 import org.alter.game.pluginnew.MenuOption
+import org.alter.game.pluginnew.event.EventManager
 import org.alter.game.pluginnew.event.impl.ObjectClickEvent
 import java.lang.ref.WeakReference
 
@@ -66,7 +68,21 @@ class OpLocHandler : MessageHandler<OpLoc> {
 
         client.attr[INTERACTING_OPT_ATTR] = message.op
         client.attr[INTERACTING_OBJ_ATTR] = WeakReference(obj)
-        client.executePlugin(ObjectPathAction.objectInteractPlugin)
-        ObjectClickEvent(obj, MenuOption.fromId(message.op), client).post()
+        val lineOfSightRange = client.world.plugins.getObjInteractionDistance(obj.id)
+
+        walk(client, obj, lineOfSightRange) {
+            val handledByNewSystem = EventManager.postWithResult(ObjectClickEvent(obj, MenuOption.fromId(message.op), client))
+            val handledByOldSystem = client.world.plugins.executeObject(client, obj.getTransform(client), message.op)
+
+            if (!handledByNewSystem && !handledByOldSystem) {
+                client.writeMessage(Entity.NOTHING_INTERESTING_HAPPENS)
+                if (client.world.devContext.debugObjects) {
+                    client.writeMessage(
+                        "Unhandled object action: [opt=${message.op}, id=${obj.id}, type=${obj.type}, rot=${obj.rot}, x=${obj.tile.x}, y=${obj.tile.z}]",
+                    )
+                }
+            }
+        }
+
     }
 }
