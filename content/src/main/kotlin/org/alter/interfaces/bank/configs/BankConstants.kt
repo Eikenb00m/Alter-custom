@@ -1,6 +1,14 @@
+@file:Suppress("ConstPropertyName")
+
 package org.alter.interfaces.bank.configs
 
 /**
- * Placeholder for bank-related constants ported from RSMod.
+ * Bank-specific values that are not tied to interface IDs or varbits.
+ *
+ * All constants are initialised with placeholder values so the correct
+ * numbers can be filled in while porting the RSMod implementation.
  */
-object BankConstants
+object BankConstants {
+    const val default_capacity: Int = -1
+    const val purchasable_capacity: Int = -1
+}

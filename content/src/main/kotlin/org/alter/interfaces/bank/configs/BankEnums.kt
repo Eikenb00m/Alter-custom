@@ -1,6 +1,12 @@
+@file:Suppress("ConstPropertyName")
+
 package org.alter.interfaces.bank.configs
 
 /**
- * Placeholder for bank-related enums ported from RSMod.
+ * Enum archive references required by the bank interface.
+ *
+ * Each enum should be replaced with the correct ID from the cache.
  */
-object BankEnums
+object BankEnums {
+    const val worn_component_map: Int = -1
+}
