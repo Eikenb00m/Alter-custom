@@ -1,6 +1,6 @@
 @file:Suppress("ConstPropertyName")
 
-package org.alter.interfaces.bank.configs
+package org.alter.plugins.content.interfaces.bank.configs
 
 /**
  * Interface and component identifiers used throughout the bank module.

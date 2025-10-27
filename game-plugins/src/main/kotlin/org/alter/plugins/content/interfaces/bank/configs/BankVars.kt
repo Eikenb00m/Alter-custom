@@ -1,6 +1,6 @@
 @file:Suppress("ConstPropertyName")
 
-package org.alter.interfaces.bank.configs
+package org.alter.plugins.content.interfaces.bank.configs
 
 /**
  * Varbit and varp identifiers used by the bank interface.

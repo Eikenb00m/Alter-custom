@@ -1,6 +1,6 @@
 @file:Suppress("ConstPropertyName")
 
-package org.alter.interfaces.bank.configs
+package org.alter.plugins.content.interfaces.bank.configs
 
 /**
  * Bank-specific values that are not tied to interface IDs or varbits.
