@@ -9,6 +9,6 @@ package org.alter.plugins.content.interfaces.bank.configs
  * numbers can be filled in while porting the RSMod implementation.
  */
 object BankConstants {
-    const val default_capacity: Int = -1
-    const val purchasable_capacity: Int = -1
+    const val default_capacity: Int = 800
+    const val purchasable_capacity: Int = 400
 }

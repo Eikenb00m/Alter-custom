@@ -8,5 +8,5 @@ package org.alter.plugins.content.interfaces.bank.configs
  * Each enum should be replaced with the correct ID from the cache.
  */
 object BankEnums {
-    const val worn_component_map: Int = -1
+    const val worn_component_map: Int = 2777
 }
