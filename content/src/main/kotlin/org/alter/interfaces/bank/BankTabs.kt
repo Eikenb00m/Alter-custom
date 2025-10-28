@@ -3,6 +3,7 @@ package org.alter.interfaces.bank
 import org.alter.api.ext.getVarbit
 import org.alter.api.ext.setVarbit
 import org.alter.game.model.attr.INTERACTING_ITEM_SLOT
+import org.alter.game.model.container.ItemContainer
 import org.alter.game.model.entity.Player
 import org.alter.game.model.item.Item
 import org.alter.interfaces.bank.configs.BankVarbits
@@ -91,7 +92,7 @@ object BankTabs {
 
     fun getTabsItems(player: Player, tab: Int): List<Item?> {
         if (tab == 0) {
-            return player.bank.items.toList()
+            return player.bank.rawItems.toList()
         }
         val start = insertionPoint(player, tab - 1)
         val size = getTabSize(player, tab)
@@ -118,4 +119,20 @@ object BankTabs {
         val varbit = TAB_VARBITS.getOrNull(tab - 1) ?: return
         player.setVarbit(varbit, size.coerceAtLeast(0))
     }
+}
+
+private fun ItemContainer.insert(from: Int, to: Int) {
+    val fromItem = this[from] ?: return
+    this[from] = null
+
+    if (from < to) {
+        for (index in from until to) {
+            this[index] = this[index + 1]
+        }
+    } else {
+        for (index in from downTo to + 1) {
+            this[index] = this[index - 1]
+        }
+    }
+    this[to] = fromItem
 }
