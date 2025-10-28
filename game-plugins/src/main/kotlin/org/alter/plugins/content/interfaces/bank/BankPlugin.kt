@@ -1,8 +1,5 @@
 package org.alter.plugins.content.interfaces.bank
 
-private val Int.child: Int
-    get() = this and 0xFFFF
-
 import org.alter.api.*
 import org.alter.api.cfg.*
 import org.alter.api.dsl.*
@@ -44,6 +41,9 @@ import org.alter.plugins.content.interfaces.bank.BankTabs.sizeVarbit
 import org.alter.plugins.content.interfaces.bank.configs.BankComponents
 import org.alter.plugins.content.interfaces.bank.configs.BankSubComponents
 import org.alter.plugins.content.interfaces.bank.configs.BankVarbits
+
+private val Int.child: Int
+    get() = this and 0xFFFF
 
 class BankPlugin(
     r: PluginRepository,
@@ -441,22 +441,20 @@ class BankPlugin(
     }
 
     private fun bindWornItemInteractions() {
-        val wornComponents = intArrayOf(76, 77, 78, 86, 79, 80, 81, 82, 83, 84, 85)
-        val equipmentTypes = arrayOf(
-            EquipmentType.HEAD,
-            EquipmentType.CAPE,
-            EquipmentType.AMULET,
-            EquipmentType.AMMO,
-            EquipmentType.WEAPON,
-            EquipmentType.CHEST,
-            EquipmentType.SHIELD,
-            EquipmentType.LEGS,
-            EquipmentType.GLOVES,
-            EquipmentType.BOOTS,
-            EquipmentType.RING,
+        val wornComponentBindings = listOf(
+            EquipmentType.HEAD to BankComponents.wornslot0.child,
+            EquipmentType.CAPE to BankComponents.wornslot1.child,
+            EquipmentType.AMULET to BankComponents.wornslot2.child,
+            EquipmentType.WEAPON to BankComponents.wornslot3.child,
+            EquipmentType.CHEST to BankComponents.wornslot4.child,
+            EquipmentType.SHIELD to BankComponents.wornslot5.child,
+            EquipmentType.LEGS to BankComponents.wornslot7.child,
+            EquipmentType.GLOVES to BankComponents.wornslot9.child,
+            EquipmentType.BOOTS to BankComponents.wornslot10.child,
+            EquipmentType.RING to BankComponents.wornslot12.child,
+            EquipmentType.AMMO to BankComponents.wornslot13.child,
         )
-        wornComponents.forEachIndexed { index, component ->
-            val equipment = equipmentTypes[index]
+        wornComponentBindings.forEach { (equipment, component) ->
             onButton(interfaceId = BANK_INTERFACE_ID, component = component) {
                 val opt = player.getInteractingOption()
                 val item = player.equipment[equipment.id] ?: return@onButton

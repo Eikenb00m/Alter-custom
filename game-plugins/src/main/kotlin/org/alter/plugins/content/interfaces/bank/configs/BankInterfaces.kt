@@ -37,6 +37,17 @@ object BankComponents {
     const val worn_prayer: Int = 786491
     const val worn_undead: Int = 786535
     const val worn_slayer: Int = 786513
+    const val wornslot0: Int = 786485
+    const val wornslot1: Int = 786487
+    const val wornslot2: Int = 786472
+    const val wornslot3: Int = 786473
+    const val wornslot4: Int = 786475
+    const val wornslot5: Int = 786477
+    const val wornslot7: Int = 786467
+    const val wornslot9: Int = 786470
+    const val wornslot10: Int = 786554
+    const val wornslot12: Int = 786553
+    const val wornslot13: Int = 786551
     const val tutorial_overlay_target: Int = 786490
     const val confirmation_overlay_target: Int = 786568
     const val tooltip: Int = 786433
