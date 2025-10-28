@@ -3,7 +3,6 @@ package org.alter.interfaces.bank.scripts
 import org.alter.api.ext.inputInt
 import org.alter.api.ext.message
 import org.alter.game.model.entity.Player
-import org.alter.game.model.queue.queue
 import org.alter.game.pluginnew.Script
 import org.alter.game.pluginnew.event.impl.ButtonClickEvent
 import org.alter.interfaces.bank.BankFillerMode
@@ -163,7 +162,7 @@ class BankSettingsEvents : Script() {
 
     private fun Player.releasePlaceholders() {
         var removed = 0
-        for (index in bank.indices) {
+        for (index in 0 until bank.capacity) {
             val item = bank[index] ?: continue
             if (item.amount == -2) {
                 bank[index] = null
