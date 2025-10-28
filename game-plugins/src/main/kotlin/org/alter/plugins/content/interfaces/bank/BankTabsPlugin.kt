@@ -24,12 +24,12 @@ import org.alter.plugins.content.interfaces.bank.Bank.BANK_MAINTAB_COMPONENT
 import org.alter.plugins.content.interfaces.bank.Bank.REARRANGE_MODE_VARBIT
 import org.alter.plugins.content.interfaces.bank.Bank.insert
 import org.alter.plugins.content.interfaces.bank.BankTabs.BANK_TABLIST_ID
-import org.alter.plugins.content.interfaces.bank.BankTabs.BANK_TAB_ROOT_VARBIT
 import org.alter.plugins.content.interfaces.bank.BankTabs.SELECTED_TAB_VARBIT
 import org.alter.plugins.content.interfaces.bank.BankTabs.dropToTab
 import org.alter.plugins.content.interfaces.bank.BankTabs.insertionPoint
 import org.alter.plugins.content.interfaces.bank.BankTabs.numTabsUnlocked
 import org.alter.plugins.content.interfaces.bank.BankTabs.shiftTabs
+import org.alter.plugins.content.interfaces.bank.BankTabs.sizeVarbit
 import org.alter.plugins.content.interfaces.bank.BankTabs.startPoint
 
 class BankTabsPlugin(
@@ -113,16 +113,18 @@ class BankTabsPlugin(
                 while (item != end) {
                     container.insert(item, container.nextFreeSlot - 1)
                     end--
-                    player.setVarbit(BANK_TAB_ROOT_VARBIT + srcTab, player.getVarbit(BANK_TAB_ROOT_VARBIT + srcTab) - 1)
-                    // check for empty tab shift
-                    if (player.getVarbit(BANK_TAB_ROOT_VARBIT + srcTab) == 0 && srcTab <= numTabsUnlocked(player)) {
+                    val srcVarbit = sizeVarbit(srcTab)
+                    player.setVarbit(srcVarbit, player.getVarbit(srcVarbit) - 1)
+                    if (player.getVarbit(srcVarbit) == 0 && srcTab <= numTabsUnlocked(player)) {
                         shiftTabs(player, srcTab)
                     }
                 }
                 return@onComponentToComponentItemSwap
             }
-            val srcSize = player.getVarbit(BANK_TAB_ROOT_VARBIT + srcTab)
-            val dstSize = player.getVarbit(BANK_TAB_ROOT_VARBIT + dstTab)
+            val srcVarbit = sizeVarbit(srcTab)
+            val dstVarbit = sizeVarbit(dstTab)
+            val srcSize = player.getVarbit(srcVarbit)
+            val dstSize = player.getVarbit(dstVarbit)
             val insertMode = player.getVarbit(REARRANGE_MODE_VARBIT) == 1
             if (insertMode) {
                 if (dstTab < srcTab) { // insert each of the items in srcTab directly before dstTab moving index up each time to account for shifts
@@ -130,11 +132,12 @@ class BankTabsPlugin(
                     for (item in startPoint(player, srcTab) until insertionPoint(player, srcTab))
                         container.insert(item, destination++)
                     // update tab size varbits according to insertion location
-                    var holder = player.getVarbit(BANK_TAB_ROOT_VARBIT + dstTab)
-                    player.setVarbit(BANK_TAB_ROOT_VARBIT + dstTab, srcSize)
+                    var holder = player.getVarbit(dstVarbit)
+                    player.setVarbit(dstVarbit, srcSize)
                     for (tab in dstTab + 1..srcTab) {
-                        val temp = player.getVarbit(BANK_TAB_ROOT_VARBIT + tab)
-                        player.setVarbit(BANK_TAB_ROOT_VARBIT + tab, holder)
+                        val tabVarbit = sizeVarbit(tab)
+                        val temp = player.getVarbit(tabVarbit)
+                        player.setVarbit(tabVarbit, holder)
                         holder = temp
                     }
                 } else { // insert each item in srcTab before dstTab consuming index move in the shifts already in insert()
@@ -145,19 +148,22 @@ class BankTabsPlugin(
                     val srcStart = startPoint(player, srcTab)
                     for (item in 1..srcSize)
                         container.insert(srcStart, destination)
-                    var holder = player.getVarbit(4169 + dstTab)
-                    player.setVarbit(4169 + dstTab, srcSize)
+                    var holder = player.getVarbit(dstVarbit)
+                    player.setVarbit(dstVarbit, srcSize)
                     for (tab in dstTab - 2 downTo srcTab) {
-                        val temp = player.getVarbit(BANK_TAB_ROOT_VARBIT + tab)
-                        player.setVarbit(BANK_TAB_ROOT_VARBIT + tab, holder)
+                        val tabVarbit = sizeVarbit(tab)
+                        val temp = player.getVarbit(tabVarbit)
+                        player.setVarbit(tabVarbit, holder)
                         holder = temp
                     }
                 }
             } else { // swap tabs in place
                 val smallerTab = if (dstSize <= srcSize) dstTab else srcTab
-                val smallSize = player.getVarbit(BANK_TAB_ROOT_VARBIT + smallerTab)
+                val smallVarbit = sizeVarbit(smallerTab)
+                val smallSize = player.getVarbit(smallVarbit)
                 val largerTab = if (dstSize > srcSize) dstTab else srcTab
-                val largeSize = player.getVarbit(BANK_TAB_ROOT_VARBIT + largerTab)
+                val largeVarbit = sizeVarbit(largerTab)
+                val largeSize = player.getVarbit(largeVarbit)
                 val smallStart = startPoint(player, smallerTab)
                 val largeStart = startPoint(player, largerTab)
 
@@ -178,8 +184,8 @@ class BankTabsPlugin(
                     }
                 }
                 // update each tab's size to reflect new contents
-                player.setVarbit(BANK_TAB_ROOT_VARBIT + smallerTab, largeSize)
-                player.setVarbit(BANK_TAB_ROOT_VARBIT + largerTab, smallSize)
+                player.setVarbit(smallVarbit, largeSize)
+                player.setVarbit(largeVarbit, smallSize)
             }
         }
     }

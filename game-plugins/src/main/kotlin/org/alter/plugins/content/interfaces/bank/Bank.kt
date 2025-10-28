@@ -1,6 +1,5 @@
 package org.alter.plugins.content.interfaces.bank
 
-import org.alter.api.BonusSlot
 import org.alter.api.ClientScript
 import org.alter.api.InterfaceDestination
 import org.alter.api.ext.*
@@ -10,30 +9,30 @@ import org.alter.game.model.entity.Player
 import org.alter.game.model.item.Item
 import org.alter.plugins.content.interfaces.bank.BankTabs.SELECTED_TAB_VARBIT
 import org.alter.plugins.content.interfaces.bank.BankTabs.getTabsItems
-import org.alter.plugins.content.interfaces.equipstats.EquipmentStats
+import org.alter.plugins.content.interfaces.bank.configs.BankComponents
+import org.alter.plugins.content.interfaces.bank.configs.BankConstants
+import org.alter.plugins.content.interfaces.bank.configs.BankInterfaces
+import org.alter.plugins.content.interfaces.bank.configs.BankVarbits
 import org.alter.plugins.content.interfaces.equipstats.EquipmentStats.bonusTextMap
 
-/**
- * @author Tom <rspsmods@gmail.com>
- */
 object Bank {
-    const val BANK_INTERFACE_ID = 12
-    const val BANK_MAINTAB_COMPONENT = 13
-    const val INV_INTERFACE_ID = 15
-    const val INV_INTERFACE_CHILD = 3
+    private val Int.child: Int
+        get() = this and 0xFFFF
 
-    const val WITHDRAW_AS_VARBIT = 3958
-    const val REARRANGE_MODE_VARBIT = 3959
-    const val ALWAYS_PLACEHOLD_VARBIT = 3755
-    const val LAST_X_INPUT = 3960
-    const val QUANTITY_VARBIT = 6590
-    const val INCINERATOR_VARBIT = 5102
+    const val BANK_INTERFACE_ID: Int = BankInterfaces.bank_main
+    const val INV_INTERFACE_ID: Int = BankInterfaces.bank_side
 
-    /**
-     * Visual varbit for the "Bank your loot" tab area interface when storing
-     * items from a looting bag into the bank.
-     */
-    private const val BANK_YOUR_LOOT_VARBIT = 4139
+    const val BANK_MAINTAB_COMPONENT: Int = BankComponents.main_inventory.child
+    const val INV_INTERFACE_CHILD: Int = BankComponents.side_inventory.child
+
+    const val WITHDRAW_AS_VARBIT: Int = BankVarbits.withdraw_mode
+    const val REARRANGE_MODE_VARBIT: Int = BankVarbits.rearrange_mode
+    const val ALWAYS_PLACEHOLD_VARBIT: Int = BankVarbits.placeholders
+    const val LAST_X_INPUT: Int = BankVarbits.last_quantity_input
+    const val QUANTITY_VARBIT: Int = BankVarbits.left_click_quantity
+    const val INCINERATOR_VARBIT: Int = BankVarbits.incinerator
+
+    private const val BANK_YOUR_LOOT_VARBIT: Int = 4139
 
     fun withdraw(
         p: Player,
@@ -45,7 +44,7 @@ object Bank {
         var withdrawn = 0
         val from = p.bank
         val to = p.inventory
-        val amount = Math.min(from.getItemCount(id), amt)
+        val amount = minOf(from.getItemCount(id), amt)
         val note = p.getVarbit(WITHDRAW_AS_VARBIT) == 1
         for (i in slot until from.capacity) {
             val item = from[i] ?: continue
@@ -56,7 +55,7 @@ object Bank {
                 break
             }
             val left = amount - withdrawn
-            val copy = Item(item.id, Math.min(left, item.amount))
+            val copy = Item(item.id, minOf(left, item.amount))
             if (copy.amount >= item.amount) {
                 copy.copyAttr(item)
             }
@@ -65,10 +64,6 @@ object Bank {
             if (from[i] == null) {
                 if (placehold || p.getVarbit(ALWAYS_PLACEHOLD_VARBIT) == 1) {
                     val def = item.getDef()
-                    /**
-                     * Make sure the item has a valid placeholder item in its
-                     * definition.
-                     */
                     if (def.placeholderLink > 0) {
                         p.bank[i] = Item(def.placeholderLink, -2)
                     }
@@ -87,7 +82,6 @@ object Bank {
         id: Int,
         amt: Int,
     ) {
-        println("Deposit method executed ====")
         val from = player.inventory
         val to = player.bank
         val amount = from.getItemCount(id).coerceAtMost(amt)
@@ -104,19 +98,15 @@ object Bank {
             val hasEmptySlot = getTabsItems(player, curTab).contains(null)
 
             val left = amount - deposited
-            val copy = Item(item.id, Math.min(left, item.amount))
+            val copy = Item(item.id, minOf(left, item.amount))
             if (copy.amount >= item.amount) {
                 copy.copyAttr(item)
             }
-            /**
-             * @TODO Add handling if curTab is not selected --> We load items into main tab. Even if other tabs have empty slots.
-             * @TODO When taking tabs first item it will do shift. --> Empty slots are moved not removed.
-             */
+
             var toSlot = to.removePlaceholder(player.world, copy)
             var placeholderOrExistingStack = true
             if (toSlot == -1 && !to.contains(item.id)) {
                 placeholderOrExistingStack = false
-                //toSlot = to.getLastFreeSlot()
             }
             val transaction = from.transfer(to, item = copy, fromSlot = i, toSlot = toSlot, note = false, unnote = true)
             if (transaction != null) {
@@ -125,7 +115,7 @@ object Bank {
 
             if (deposited > 0) {
                 if (curTab != 0 && !placeholderOrExistingStack) {
-                    BankTabs.dropToTab(player, curTab, to.getLastFreeSlotReversed() - 1, hasEmptySlot)
+                    BankTabs.dropToTab(player, curTab, to.nextFreeSlot - 1, hasEmptySlot)
                 }
             }
         }
@@ -139,46 +129,24 @@ object Bank {
         p.openInterface(BANK_INTERFACE_ID, InterfaceDestination.MAIN_SCREEN)
         p.openInterface(INV_INTERFACE_ID, InterfaceDestination.TAB_AREA)
         p.setVarp(262, -1)
-        p.setComponentText(interfaceId = BANK_INTERFACE_ID, component = 9, text = p.bank.capacity.toString())
+        p.setComponentText(BANK_INTERFACE_ID, BankComponents.capacity_text.child, p.bank.capacity.toString())
         p.runClientScript(
             ClientScript(id = 1495),
-            "Non-members' capacity: 400<br>Become a member for 400 more.<br>A banker can sell you up to 360 more.<br>+20 for your PIN.<br>Set an Authenticator for 20 more.",
-            786439,
-            786549,
+            "Members' capacity: ${BankConstants.default_capacity}<br>A banker can sell you up to ${BankConstants.purchasable_capacity} more.",
+            BankComponents.capacity_container,
+            BankComponents.tooltip,
         )
         sendBonuses(p)
-        p.setInterfaceEvents(
-            interfaceId = INV_INTERFACE_ID,
-            component = 3,
-            0..27,
-            InterfaceEvent.ClickOp1,
-            InterfaceEvent.ClickOp2,
-            InterfaceEvent.ClickOp3,
-            InterfaceEvent.ClickOp4,
-            InterfaceEvent.ClickOp5,
-            InterfaceEvent.ClickOp6,
-            InterfaceEvent.ClickOp7,
-            InterfaceEvent.ClickOp8,
-            InterfaceEvent.ClickOp9,
-            InterfaceEvent.ClickOp10,
-            InterfaceEvent.DRAG_DEPTH1,
-            InterfaceEvent.DragTargetable,
-        )
-        p.setInterfaceEvents(interfaceId = BANK_INTERFACE_ID, component = 47, 1..1200, InterfaceEvent.ClickOp1)
-        p.setInterfaceEvents(
-            interfaceId = INV_INTERFACE_ID,
-            component = 19,
-            0..27,
-            InterfaceEvent.ClickOp1,
-            InterfaceEvent.ClickOp2,
-            InterfaceEvent.ClickOp3,
-            InterfaceEvent.ClickOp4,
-            InterfaceEvent.ClickOp10,
-        )
-        p.setInterfaceEvents(
+        setBankEvents(p)
+        p.setVarbit(BANK_YOUR_LOOT_VARBIT, 0)
+    }
+
+    private fun setBankEvents(player: Player) {
+        val bankRange = 0 until player.bank.capacity
+        player.setInterfaceEvents(
             interfaceId = BANK_INTERFACE_ID,
-            component = 13,
-            0..1199,
+            component = BANK_MAINTAB_COMPONENT,
+            range = bankRange,
             InterfaceEvent.ClickOp1,
             InterfaceEvent.ClickOp2,
             InterfaceEvent.ClickOp3,
@@ -192,81 +160,124 @@ object Bank {
             InterfaceEvent.DRAG_DEPTH2,
             InterfaceEvent.DragTargetable,
         )
-        p.setInterfaceEvents(interfaceId = BANK_INTERFACE_ID, 13, 1218..1227, InterfaceEvent.DragTargetable)
-        p.setInterfaceEvents(
+        player.setInterfaceEvents(
             interfaceId = BANK_INTERFACE_ID,
-            11,
-            10..10,
+            component = BankComponents.tabs.child,
+            range = BankSubComponents.main_tab..BankSubComponents.main_tab,
             InterfaceEvent.ClickOp1,
             InterfaceEvent.ClickOp7,
             InterfaceEvent.DragTargetable,
         )
-        p.setInterfaceEvents(
+        player.setInterfaceEvents(
             interfaceId = BANK_INTERFACE_ID,
-            11,
-            11..19,
+            component = BankComponents.tabs.child,
+            range = BankSubComponents.other_tabs,
             InterfaceEvent.ClickOp1,
             InterfaceEvent.ClickOp6,
             InterfaceEvent.ClickOp7,
             InterfaceEvent.DRAG_DEPTH1,
             InterfaceEvent.DragTargetable,
         )
-        p.setInterfaceEvents(
+        val invRange = 0 until player.inventory.capacity
+        player.setInterfaceEvents(
             interfaceId = INV_INTERFACE_ID,
-            4,
-            0..27,
-            InterfaceEvent.ClickOp1,
-            InterfaceEvent.ClickOp10,
-            InterfaceEvent.DRAG_DEPTH1,
-            InterfaceEvent.DragTargetable,
-        )
-        p.setInterfaceEvents(interfaceId = BANK_INTERFACE_ID, component = 50, 0..3, InterfaceEvent.ClickOp1)
-        p.setInterfaceEvents(
-            interfaceId = INV_INTERFACE_ID,
-            component = 13,
-            0..27,
+            component = BankComponents.side_inventory.child,
+            range = invRange,
             InterfaceEvent.ClickOp1,
             InterfaceEvent.ClickOp2,
             InterfaceEvent.ClickOp3,
             InterfaceEvent.ClickOp4,
+            InterfaceEvent.ClickOp5,
+            InterfaceEvent.ClickOp6,
+            InterfaceEvent.ClickOp7,
+            InterfaceEvent.ClickOp8,
+            InterfaceEvent.ClickOp9,
+            InterfaceEvent.ClickOp10,
+            InterfaceEvent.DRAG_DEPTH1,
+            InterfaceEvent.DragTargetable,
+        )
+        player.setInterfaceEvents(
+            interfaceId = INV_INTERFACE_ID,
+            component = BankComponents.worn_inventory.child,
+            range = invRange,
+            InterfaceEvent.ClickOp1,
+            InterfaceEvent.ClickOp9,
+            InterfaceEvent.ClickOp10,
+            InterfaceEvent.DRAG_DEPTH1,
+            InterfaceEvent.DragTargetable,
+        )
+        player.setInterfaceEvents(
+            interfaceId = INV_INTERFACE_ID,
+            component = BankComponents.lootingbag_inventory.child,
+            range = invRange,
+            InterfaceEvent.ClickOp1,
+            InterfaceEvent.ClickOp2,
+            InterfaceEvent.ClickOp3,
+            InterfaceEvent.ClickOp4,
+            InterfaceEvent.ClickOp5,
+            InterfaceEvent.ClickOp6,
+            InterfaceEvent.ClickOp7,
             InterfaceEvent.ClickOp10,
         )
-        p.setVarbit(BANK_YOUR_LOOT_VARBIT, 0)
+        player.setInterfaceEvents(
+            interfaceId = INV_INTERFACE_ID,
+            component = BankComponents.league_inventory.child,
+            range = invRange,
+            InterfaceEvent.ClickOp1,
+            InterfaceEvent.ClickOp2,
+            InterfaceEvent.ClickOp3,
+            InterfaceEvent.ClickOp4,
+            InterfaceEvent.ClickOp5,
+            InterfaceEvent.ClickOp6,
+            InterfaceEvent.ClickOp7,
+            InterfaceEvent.ClickOp10,
+        )
+        player.setInterfaceEvents(
+            interfaceId = BANK_INTERFACE_ID,
+            component = BankComponents.incinerator_confirm.child,
+            range = 1..player.bank.capacity,
+            InterfaceEvent.ClickOp1,
+        )
+        player.setInterfaceEvents(
+            interfaceId = BANK_INTERFACE_ID,
+            component = BankComponents.bank_tab_display.child,
+            range = 0..8,
+            InterfaceEvent.ClickOp1,
+        )
     }
 
     fun sendBonuses(p: Player) {
-
+        val bonuses = p.bonusTextMap()
         with(p) {
-            setBankEquipCompText(component = 98, text = bonusTextMap()[0])
-            setBankEquipCompText(component = 99, text = bonusTextMap()[1])
-            setBankEquipCompText(component = 100, text = bonusTextMap()[2])
-            setBankEquipCompText(component = 101, text = bonusTextMap()[3])
-            setBankEquipCompText(component = 102, text = bonusTextMap()[4])
-            setBankEquipCompText(component = 132, text = bonusTextMap()[5])
-            setBankEquipCompText(component = 133, text = bonusTextMap()[6])
-            setBankEquipCompText(component = 104, text = bonusTextMap()[7])
-            setBankEquipCompText(component = 105, text = bonusTextMap()[8])
-            setBankEquipCompText(component = 106, text = bonusTextMap()[9])
-            setBankEquipCompText(component = 108, text = bonusTextMap()[10])
-            setBankEquipCompText(component = 107, text = bonusTextMap()[11])
-            setBankEquipCompText(component = 110, text = bonusTextMap()[12])
-            setBankEquipCompText(component = 111, text = bonusTextMap()[13])
-            setBankEquipCompText(component = 112, text = bonusTextMap()[14])
-            setBankEquipCompText(component = 113, text = bonusTextMap()[15])
-            setBankEquipCompText(component = 115, text = bonusTextMap()[16])
-            setBankEquipCompText(component = 116, text = bonusTextMap()[17])
-
+            setBankEquipCompText(BankComponents.worn_off_stab.child, bonuses[0])
+            setBankEquipCompText(BankComponents.worn_off_slash.child, bonuses[1])
+            setBankEquipCompText(BankComponents.worn_off_crush.child, bonuses[2])
+            setBankEquipCompText(BankComponents.worn_off_magic.child, bonuses[3])
+            setBankEquipCompText(BankComponents.worn_off_range.child, bonuses[4])
+            setBankEquipCompText(BankComponents.worn_speed_base.child, bonuses[5])
+            setBankEquipCompText(BankComponents.worn_speed.child, bonuses[6])
+            setBankEquipCompText(BankComponents.worn_def_stab.child, bonuses[7])
+            setBankEquipCompText(BankComponents.worn_def_slash.child, bonuses[8])
+            setBankEquipCompText(BankComponents.worn_def_crush.child, bonuses[9])
+            setBankEquipCompText(BankComponents.worn_def_range.child, bonuses[10])
+            setBankEquipCompText(BankComponents.worn_def_magic.child, bonuses[11])
+            setBankEquipCompText(BankComponents.worn_melee_str.child, bonuses[12])
+            setBankEquipCompText(BankComponents.worn_ranged_str.child, bonuses[13])
+            setBankEquipCompText(BankComponents.worn_magic_dmg.child, bonuses[14])
+            setBankEquipCompText(BankComponents.worn_prayer.child, bonuses[15])
+            setBankEquipCompText(BankComponents.worn_undead.child, bonuses[16])
+            setBankEquipCompText(BankComponents.worn_slayer.child, bonuses[17])
         }
         p.runClientScript(
             ClientScript(id = 7065),
-            786549,
-            786538,
+            BankComponents.tooltip,
+            BankComponents.worn_magic_dmg,
             "Increases your effective accuracy and damage against undead creatures. For multi-target Ranged and Magic attacks, this applies only to the primary target. It does not stack with the Slayer multiplier.",
         )
-        p.setComponentText(interfaceId = BANK_INTERFACE_ID, component = 107, text = "Slayer: 0%") // @TODO
     }
+
     private fun Player.setBankEquipCompText(component: Int, text: String) {
-        this.setComponentText(interfaceId = BANK_INTERFACE_ID, component = component, text = text)
+        setComponentText(BANK_INTERFACE_ID, component, text)
     }
 
     fun ItemContainer.removePlaceholder(
@@ -285,10 +296,8 @@ object Bank {
         from: Int,
         to: Int,
     ) {
-        val fromItem = this[from]!! // Shouldn't be null
-
+        val fromItem = this[from] ?: return
         this[from] = null
-
         if (from < to) {
             for (i in from until to) {
                 this[i] = this[i + 1]
