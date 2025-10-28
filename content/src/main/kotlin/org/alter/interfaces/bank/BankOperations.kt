@@ -33,27 +33,29 @@ import org.alter.interfaces.bank.util.interfaceId
 
 object BankOperations {
 
-    fun Player.openBank() {
-        setInterfaceUnderlay(-1, -2)
-        openInterface(BankInterfaces.bank_main, InterfaceDestination.MAIN_SCREEN)
-        openInterface(BankInterfaces.bank_side, InterfaceDestination.TAB_AREA)
-        setVarp(BankVarps.bank_serverside_vars, -1)
-        setComponentText(
-            interfaceId = BankInterfaces.bank_main,
-            component = BankComponents.capacity_text.componentId,
-            text = bank.capacity.toString(),
-        )
-        runClientScript(
-            ClientScript(id = 1495),
-            "Non-members' capacity: 400<br>Become a member for 400 more.<br>A banker can sell you up to 360 more.<br>+20 for your PIN.<br>Set an Authenticator for 20 more.",
-            BankComponents.capacity_container,
-            BankComponents.tooltip,
-        )
+    fun openBank(player: Player) {
+        with(player) {
+            setInterfaceUnderlay(-1, -2)
+            openInterface(BankInterfaces.bank_main, InterfaceDestination.MAIN_SCREEN)
+            openInterface(BankInterfaces.bank_side, InterfaceDestination.TAB_AREA)
+            setVarp(BankVarps.bank_serverside_vars, -1)
+            setComponentText(
+                interfaceId = BankInterfaces.bank_main,
+                component = BankComponents.capacity_text.componentId,
+                text = bank.capacity.toString(),
+            )
+            runClientScript(
+                ClientScript(id = 1495),
+                "Non-members' capacity: 400<br>Become a member for 400 more.<br>A banker can sell you up to 360 more.<br>+20 for your PIN.<br>Set an Authenticator for 20 more.",
+                BankComponents.capacity_container,
+                BankComponents.tooltip,
+            )
 
-        sendBonuses()
-        setInventoryInterfaceEvents()
-        setBankInterfaceEvents()
-        sendSideInventory()
+            sendBonuses()
+            setInventoryInterfaceEvents()
+            setBankInterfaceEvents()
+            sendSideInventory()
+        }
     }
 
     private fun Player.sendBonuses() {
@@ -212,14 +214,22 @@ object BankOperations {
         )
     }
 
-    fun Player.closeBankInterfaces() {
-        closeInterface(BankInterfaces.bank_main)
-        closeInterface(BankInterfaces.bank_side)
-        closeInterface(dest = InterfaceDestination.TAB_AREA)
-        closeInterface(dest = InterfaceDestination.OVERLAY)
+    fun closeBankInterfaces(player: Player) {
+        with(player) {
+            closeInterface(BankInterfaces.bank_main)
+            closeInterface(BankInterfaces.bank_side)
+            closeInterface(dest = InterfaceDestination.TAB_AREA)
+            closeInterface(dest = InterfaceDestination.OVERLAY)
+        }
     }
 
-    fun Player.deposit(id: Int, amount: Int) {
+    fun deposit(player: Player, id: Int, amount: Int) {
+        with(player) {
+            depositItem(id, amount)
+        }
+    }
+
+    private fun Player.depositItem(id: Int, amount: Int) {
         val from = inventory
         val to = bank
         var deposited = 0
@@ -242,7 +252,13 @@ object BankOperations {
         }
     }
 
-    fun Player.withdraw(id: Int, amount: Int, slot: Int, placehold: Boolean) {
+    fun withdraw(player: Player, id: Int, amount: Int, slot: Int, placehold: Boolean) {
+        with(player) {
+            withdrawItem(id, amount, slot, placehold)
+        }
+    }
+
+    private fun Player.withdrawItem(id: Int, amount: Int, slot: Int, placehold: Boolean) {
         val from = bank
         val to = inventory
         val maxAmount = amount.coerceAtMost(from.getItemCount(id))
