@@ -48,19 +48,46 @@ class BankTabsPlugin(
         onButton(BANK_INTERFACE_ID, BANK_TABLIST_ID) {
             val dstTab = player.getInteractingSlot() - 10
             val opt = player.getInteractingOption()
+            if (dstTab < 0) {
+                return@onButton
+            }
             when (opt) {
                 1 -> {
-                    if (dstTab <= numTabsUnlocked(player)) {
+                    if (dstTab == 0 || dstTab <= numTabsUnlocked(player)) {
                         player.setVarbit(SELECTED_TAB_VARBIT, dstTab)
+                    } else {
+                        player.message("To create a new tab, drag items from your bank onto this tab.")
                     }
                 }
-                5 -> {
-                    player.message("Not implemented [Bank1]")
-                }
                 6 -> {
-                    // @TODO Remove placeholders for that tab
-                    // If no placeholders Text: You don't have any placeholders to release. else Nothing xd
-                    player.message("Not implemented [Bank2]")
+                    if (dstTab == 0) {
+                        if (!BankTabs.removeAllPlaceholders(player)) {
+                            player.message("You don't have any placeholders to release.")
+                        } else {
+                            player.message("You release the placeholders.")
+                        }
+                    } else if (dstTab <= numTabsUnlocked(player)) {
+                        val collapsed = BankTabs.collapseTab(player, dstTab)
+                        if (!collapsed) {
+                            player.message("To create a new tab, drag items from your bank onto this tab.")
+                        }
+                    }
+                }
+                7 -> {
+                    if (dstTab == 0) {
+                        if (!BankTabs.removeAllPlaceholders(player)) {
+                            player.message("You don't have any placeholders to release.")
+                        } else {
+                            player.message("You release the placeholders.")
+                        }
+                    } else if (dstTab <= numTabsUnlocked(player)) {
+                        val removed = BankTabs.removePlaceholders(player, dstTab)
+                        if (!removed) {
+                            player.message("You don't have any placeholders to release.")
+                        } else {
+                            player.message("You release the placeholders.")
+                        }
+                    }
                 }
                 else -> {
                     player.printAndMessageIfHasPower(

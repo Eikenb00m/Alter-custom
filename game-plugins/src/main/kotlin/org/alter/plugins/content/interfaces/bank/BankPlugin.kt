@@ -39,6 +39,7 @@ import org.alter.plugins.content.interfaces.bank.BankTabs.numTabsUnlocked
 import org.alter.plugins.content.interfaces.bank.BankTabs.shiftTabs
 import org.alter.plugins.content.interfaces.bank.BankTabs.sizeVarbit
 import org.alter.plugins.content.interfaces.bank.configs.BankComponents
+import org.alter.plugins.content.interfaces.bank.configs.BankConstants
 import org.alter.plugins.content.interfaces.bank.configs.BankSubComponents
 import org.alter.plugins.content.interfaces.bank.configs.BankVarbits
 
@@ -123,6 +124,48 @@ class BankPlugin(
             player.toggleVarbit(BankVarbits.deposit_worn_items_button)
         }
 
+        onButton(interfaceId = BANK_INTERFACE_ID, component = BankComponents.tutorial_button_toggle.child) {
+            player.toggleVarbit(BankVarbits.tutorial_button)
+        }
+
+        onButton(interfaceId = BANK_INTERFACE_ID, component = BankComponents.release_placehold.child) {
+            if (BankTabs.removeAllPlaceholders(player)) {
+                player.message("You release the placeholders.")
+            } else {
+                player.message("You don't have any placeholders to release.")
+            }
+        }
+
+        val fillerButtons = listOf(
+            BankComponents.bank_fillers_all.child to 0,
+            BankComponents.bank_fillers_1.child to 1,
+            BankComponents.bank_fillers_10.child to 2,
+            BankComponents.bank_fillers_50.child to 3,
+            BankComponents.bank_fillers_x.child to 4,
+        )
+        fillerButtons.forEach { (component, value) ->
+            onButton(interfaceId = BANK_INTERFACE_ID, component = component) {
+                player.setVarbit(BankVarbits.bank_filler_quantity, value)
+            }
+        }
+
+        onButton(interfaceId = BANK_INTERFACE_ID, component = BankComponents.bank_fillers_fill.child) {
+            val mode = player.getVarbit(BankVarbits.bank_filler_quantity)
+            when (mode) {
+                0 -> handleBankFillerSelection(player, Int.MAX_VALUE)
+                1 -> handleBankFillerSelection(player, 1)
+                2 -> handleBankFillerSelection(player, 10)
+                3 -> handleBankFillerSelection(player, 50)
+                4 -> player.queue(TaskPriority.WEAK) {
+                    val amount = inputInt(player, "Enter amount:")
+                    if (amount > 0) {
+                        handleBankFillerSelection(player, amount)
+                    }
+                }
+                else -> handleBankFillerSelection(player, 1)
+            }
+        }
+
         /**
          * Added incinerator support.
          */
@@ -153,10 +196,7 @@ class BankPlugin(
                 }
             }
             if (!from.isEmpty) {
-                /**
-                 * @TODO
-                 */
-                player.message("Bank full. || theres ${Int.MAX_VALUE} of some item.")
+                player.message("Your bank is full.")
             }
         }
 // bank equipment
@@ -285,6 +325,25 @@ class BankPlugin(
 
             if (opt == 10) {
                 world.sendExamine(player, item.id, ExamineEntityType.ITEM)
+                return@p
+            }
+
+            if (item.id == BankConstants.filler_item) {
+                when (opt) {
+                    7 -> {
+                        player.bank[slot] = null
+                        player.bank.shift()
+                        player.message("You remove the bank filler.")
+                    }
+                    8 -> {
+                        if (Bank.removeBankFillers(player)) {
+                            player.message("You clear the bank fillers from your bank.")
+                        } else {
+                            player.message("You don't have any bank fillers to remove.")
+                        }
+                    }
+                    else -> player.message("You can't withdraw that.")
+                }
                 return@p
             }
 
@@ -477,5 +536,18 @@ class BankPlugin(
                 }
             }
         }
+    }
+
+    private fun handleBankFillerSelection(
+        player: Player,
+        requested: Int,
+    ) {
+        val added = Bank.addBankFillers(player, requested)
+        if (added == 0) {
+            player.message("Your bank is already full, so there is no reason to add any bank fillers.")
+            return
+        }
+        val descriptor = if (added == 1) "bank filler" else "bank fillers"
+        player.message("You add $added $descriptor to your bank.")
     }
 }

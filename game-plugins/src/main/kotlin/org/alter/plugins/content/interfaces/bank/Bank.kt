@@ -309,4 +309,51 @@ object Bank {
         }
         this[to] = fromItem
     }
+
+    fun addBankFillers(
+        player: Player,
+        requestedCount: Int,
+    ): Int {
+        val bank = player.bank
+        val start = BankTabs.startPoint(player, 0)
+        if (start >= bank.capacity) {
+            return 0
+        }
+        val unlimited = requestedCount == Int.MAX_VALUE
+        var remaining = requestedCount
+        var added = 0
+        for (slot in bank.capacity - 1 downTo start) {
+            if (!unlimited && remaining <= 0) {
+                break
+            }
+            if (bank[slot] != null) {
+                continue
+            }
+            bank[slot] = Item(BankConstants.filler_item)
+            added++
+            if (!unlimited) {
+                remaining--
+            }
+        }
+        if (added > 0) {
+            bank.shift()
+        }
+        return added
+    }
+
+    fun removeBankFillers(player: Player): Boolean {
+        val bank = player.bank
+        var removed = false
+        for (slot in 0 until bank.capacity) {
+            val item = bank[slot] ?: continue
+            if (item.id == BankConstants.filler_item) {
+                bank[slot] = null
+                removed = true
+            }
+        }
+        if (removed) {
+            bank.shift()
+        }
+        return removed
+    }
 }

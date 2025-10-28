@@ -8,4 +8,5 @@ package org.alter.plugins.content.interfaces.bank.configs
 object BankConstants {
     const val default_capacity: Int = 800
     const val purchasable_capacity: Int = 400
+    const val filler_item: Int = 20594
 }
