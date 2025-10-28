@@ -10,6 +10,12 @@ object RSCM {
         return getRSCM(this)
     }
 
+
+
+    fun getReverseMapping( table: String,value: Int): String? = ConstantProvider.mappings.entries
+        .find { it.key.startsWith("$table.") && it.value == value }
+        ?.key
+
     fun getRSCM(entity: String) = ConstantProvider.getMapping(entity)
 
 }

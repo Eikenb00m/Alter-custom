@@ -19,6 +19,8 @@ import org.alter.game.model.queue.TaskPriority
 import org.alter.game.model.queue.impl.PawnQueueTaskSet
 import org.alter.game.model.timer.*
 import org.alter.game.plugin.Plugin
+import org.alter.game.pluginnew.event.EventManager
+import org.alter.game.pluginnew.event.impl.TimerEvent
 import org.alter.game.service.log.LoggerService
 import org.rsmod.routefinder.RouteCoordinates
 import java.lang.ref.WeakReference
@@ -241,30 +243,33 @@ abstract class Pawn(val world: World) : Entity() {
      * Handle a single cycle for [timers].
      */
     fun timerCycle() {
-        val iterator = timers.getTimers().iterator()
-        while (iterator.hasNext()) {
-            val entry = iterator.next()
-            val key = entry.key
-            val time = entry.value
-            if (time <= 0) {
-                if (key == RESET_PAWN_FACING_TIMER) {
-                    resetFacePawn()
-                } else {
-                    try {
-                        world.plugins.executeTimer(this, key)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+        try {
+            val iterator = timers.getTimers().iterator()
+            while (iterator.hasNext()) {
+                val entry = iterator.next()
+                val key = entry.key
+                val time = entry.value
+                if (time <= 0) {
+                    if (key == RESET_PAWN_FACING_TIMER) {
+                        resetFacePawn()
+                    } else {
+                        try {
+                            EventManager.post(TimerEvent(key,this))
+                            world.plugins.executeTimer(this, key)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                    if (!timers.has(key)) {
+                        iterator.remove()
                     }
                 }
-                if (!timers.has(key)) {
-                    iterator.remove()
-                }
             }
-        }
 
-        timers.getTimers().entries.forEach { timer ->
-            timer.setValue(timer.value - 1)
-        }
+            timers.getTimers().entries.forEach { timer ->
+                timer.setValue(timer.value - 1)
+            }
+        }catch (e : Exception){}
     }
 
     /**

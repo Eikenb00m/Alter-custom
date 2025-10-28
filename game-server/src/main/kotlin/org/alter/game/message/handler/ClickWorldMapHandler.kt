@@ -16,11 +16,6 @@ class ClickWorldMapHandler : MessageHandler<ClickWorldMap> {
         client: Client,
         message: ClickWorldMap,
     ) {
-        if (client.world.privileges.isEligible(client.privilege, Privilege.ADMIN_POWER)) {
-            val dest = Tile(message.x, message.z, message.level)
-            log(client, "Click world map: %s", dest.toString())
-            client.moveTo(dest)
-        }
         ClickWorldMapEvent(Tile(message.x, message.z), client).post()
     }
 }
