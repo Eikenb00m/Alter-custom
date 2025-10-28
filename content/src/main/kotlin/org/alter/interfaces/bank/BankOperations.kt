@@ -1,10 +1,16 @@
 package org.alter.interfaces.bank
 
+import dev.openrune.types.ItemServerType
 import org.alter.api.BonusSlot
 import org.alter.api.ClientScript
 import org.alter.api.InterfaceDestination
 import org.alter.api.ext.InterfaceEvent
 import org.alter.api.ext.closeInterface
+import org.alter.api.ext.getBonus
+import org.alter.api.ext.getMagicDamageBonus
+import org.alter.api.ext.getPrayerBonus
+import org.alter.api.ext.getRangedStrengthBonus
+import org.alter.api.ext.getStrengthBonus
 import org.alter.api.ext.message
 import org.alter.api.ext.openInterface
 import org.alter.api.ext.runClientScript
@@ -13,10 +19,9 @@ import org.alter.api.ext.setComponentText
 import org.alter.api.ext.setInterfaceEvents
 import org.alter.api.ext.setInterfaceUnderlay
 import org.alter.api.ext.setVarp
+import org.alter.api.ext.transfer
 import org.alter.game.model.entity.Player
 import org.alter.game.model.item.Item
-import org.alter.game.model.item.ItemDef
-import org.alter.game.model.item.getDef
 import org.alter.interfaces.bank.configs.BankComponents
 import org.alter.interfaces.bank.configs.BankInterfaces
 import org.alter.interfaces.bank.configs.BankSubComponents
@@ -52,52 +57,75 @@ object BankOperations {
     }
 
     private fun Player.sendBonuses() {
-        val bonuses = equipment.getBonuses()
-        val keys = listOf(
-            BonusSlot.ATTACK_STAB,
-            BonusSlot.ATTACK_SLASH,
-            BonusSlot.ATTACK_CRUSH,
-            BonusSlot.ATTACK_MAGIC,
-            BonusSlot.ATTACK_RANGED,
-            BonusSlot.DEFENCE_STAB,
-            BonusSlot.DEFENCE_SLASH,
-            BonusSlot.DEFENCE_CRUSH,
-            BonusSlot.DEFENCE_MAGIC,
-            BonusSlot.DEFENCE_RANGED,
-            BonusSlot.STRENGTH_MELEE,
-            BonusSlot.STRENGTH_RANGED,
-            BonusSlot.STRENGTH_MAGIC,
-            BonusSlot.PRAYER,
-        )
-
+        calculateBonuses()
+        val texts = bonusTextMap()
         val components = listOf(
             BankComponents.worn_off_stab,
             BankComponents.worn_off_slash,
             BankComponents.worn_off_crush,
             BankComponents.worn_off_magic,
             BankComponents.worn_off_range,
+            BankComponents.worn_speed_base,
+            BankComponents.worn_speed,
             BankComponents.worn_def_stab,
             BankComponents.worn_def_slash,
             BankComponents.worn_def_crush,
-            BankComponents.worn_def_magic,
             BankComponents.worn_def_range,
+            BankComponents.worn_def_magic,
             BankComponents.worn_melee_str,
             BankComponents.worn_ranged_str,
             BankComponents.worn_magic_dmg,
             BankComponents.worn_prayer,
+            BankComponents.worn_undead,
+            BankComponents.worn_slayer,
         )
 
-        components.zip(keys).forEach { (component, key) ->
-            val value = bonuses[key.id]
+        components.zip(texts).forEach { (component, text) ->
             setComponentText(
-                interfaceId = BankInterfaces.bank_main,
+                interfaceId = component.interfaceId,
                 component = component.componentId,
-                text = value.signedBonus(),
+                text = text,
             )
         }
+
+        runClientScript(
+            ClientScript(id = 7065),
+            BankComponents.tooltip,
+            BankComponents.tooltip,
+            "Increases your effective accuracy and damage against undead creatures. For multi-target Ranged and Magic attacks, this applies only to the primary target. It does not stack with the Slayer multiplier.",
+        )
     }
 
-    private fun Int.signedBonus(): String = if (this >= 0) "+$this" else toString()
+    private fun Player.bonusTextMap(): List<String> {
+        val magicDamageBonus = getMagicDamageBonus().toDouble()
+        return listOf(
+            "Stab: ${formatBonus(getBonus(BonusSlot.ATTACK_STAB))}",
+            "Slash: ${formatBonus(getBonus(BonusSlot.ATTACK_SLASH))}",
+            "Crush: ${formatBonus(getBonus(BonusSlot.ATTACK_CRUSH))}",
+            "Magic: ${formatBonus(getBonus(BonusSlot.ATTACK_MAGIC))}",
+            "Range: ${formatBonus(getBonus(BonusSlot.ATTACK_RANGED))}",
+            "Base: TODO",
+            "Actual: TODO",
+            "Stab: ${formatBonus(getBonus(BonusSlot.DEFENCE_STAB))}",
+            "Slash: ${formatBonus(getBonus(BonusSlot.DEFENCE_SLASH))}",
+            "Crush: ${formatBonus(getBonus(BonusSlot.DEFENCE_CRUSH))}",
+            "Range: ${formatBonus(getBonus(BonusSlot.DEFENCE_RANGED))}",
+            "Magic: ${formatBonus(getBonus(BonusSlot.DEFENCE_MAGIC))}",
+            "Melee STR: ${formatBonus(getStrengthBonus())}",
+            "Ranged STR: ${formatBonus(getRangedStrengthBonus())}",
+            "Magic DMG: ${formatBonus(magicDamageBonus)}%",
+            "Prayer: ${formatBonus(getPrayerBonus())}",
+            "Undead: TODO",
+            "Slayer: TODO",
+        )
+    }
+
+    private fun formatBonus(bonus: Int): String = if (bonus >= 0) "+$bonus" else bonus.toString()
+
+    private fun formatBonus(bonus: Double): String {
+        val formatted = String.format("%.1f", bonus)
+        return if (bonus < 0) formatted else "+$formatted"
+    }
 
     private fun Player.setInventoryInterfaceEvents() {
         setInterfaceEvents(
@@ -180,7 +208,7 @@ object BankOperations {
         sendItemContainer(
             BankComponents.side_inventory.interfaceId,
             BankComponents.side_inventory.componentId,
-            emptyArray(),
+            emptyArray<Item?>(),
         )
     }
 
@@ -243,8 +271,8 @@ object BankOperations {
         }
     }
 
-    private fun Player.createPlaceholder(def: ItemDef?, slot: Int) {
-        if (def == null || def.placeholderLink <= 0) return
+    private fun Player.createPlaceholder(def: ItemServerType, slot: Int) {
+        if (def.placeholderLink <= 0) return
         bank[slot] = Item(def.placeholderLink, -2)
     }
 }
