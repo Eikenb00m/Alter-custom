@@ -12487,5 +12487,3 @@ poh_decor_bingo_icon=18122
 poh_decor_bingo_torch=18123
 bank_disable_ifevents=65530
 bank_tab_main=65531
-bank_tab_main=600001
-bank_disable_ifevents=600002

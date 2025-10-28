@@ -2347,5 +2347,4 @@ league_bank_heist_last_destination=4919
 feature_flags_cached=4920
 hw25=4921
 toplevel_vartransmit_redraw_blocked=4922
-bank_serverside_vars=60001
 bank_serverside_vars=65532
