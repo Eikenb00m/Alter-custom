@@ -6,6 +6,7 @@ dependencies {
     implementation(projects.gameServer)
     implementation(projects.util)
     implementation(project(":game-api"))
+    implementation(project(":content"))
     implementation(rootProject.project.libs.rsprot)
     implementation(lib.routefinder)
 }
