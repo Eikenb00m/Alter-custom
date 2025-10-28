@@ -1,6 +1,6 @@
 @file:Suppress("ConstPropertyName")
 
-package org.alter.plugins.content.interfaces.bank.configs
+package org.alter.interfaces.bank.configs
 
 /**
  * Enum archive references required by the bank interface.
