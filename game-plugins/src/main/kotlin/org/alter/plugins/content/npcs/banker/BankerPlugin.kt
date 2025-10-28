@@ -8,7 +8,7 @@ import org.alter.game.model.entity.Player
 import org.alter.game.model.queue.QueueTask
 import org.alter.game.plugin.KotlinPlugin
 import org.alter.game.plugin.PluginRepository
-import org.alter.plugins.content.interfaces.bank.openBank
+import org.alter.interfaces.bank.openBankInterface
 
 class BankerPlugin(
     r: PluginRepository, world: World, server: Server
@@ -28,7 +28,7 @@ class BankerPlugin(
                 }
             }
             onNpcOption(npc = banker, option = "bank", lineOfSightDistance = 2) {
-                player.openBank()
+                player.openBankInterface()
             }
             onNpcOption(npc = banker, option = "collect", lineOfSightDistance = 2) {
                 openCollect(player)
@@ -39,7 +39,7 @@ class BankerPlugin(
     suspend fun dialog(player: Player, it: QueueTask) {
         it.chatNpc(player, "Good day, how may I help you?")
         when (options(player, it)) {
-            1 -> player.openBank()
+            1 -> player.openBankInterface()
             2 -> openPin(player)
             3 -> openCollect(player)
             4 -> whatIsThisPlace(player, it)
