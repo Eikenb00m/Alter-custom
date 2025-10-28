@@ -43,5 +43,5 @@ object BankVarbits {
 }
 
 object BankVarps {
-    val bank_serverside_vars: Int = "varps.bank_serverside_vars".asRSCM() //TO-DO: Need to build this varp to the cache!
+    val bank_serverside_vars: Int = "varp.bank_serverside_vars".asRSCM()
 }
