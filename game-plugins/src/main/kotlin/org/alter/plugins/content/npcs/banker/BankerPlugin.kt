@@ -8,7 +8,7 @@ import org.alter.game.model.entity.Player
 import org.alter.game.model.queue.QueueTask
 import org.alter.game.plugin.KotlinPlugin
 import org.alter.game.plugin.PluginRepository
-import org.alter.plugins.content.interfaces.bank.openBank
+import org.alter.plugins.content.interfaces.bank.ExtensionsKt.openBank
 
 class BankerPlugin(
     r: PluginRepository, world: World, server: Server
