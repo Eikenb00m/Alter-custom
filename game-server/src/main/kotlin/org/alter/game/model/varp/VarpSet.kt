@@ -8,10 +8,13 @@ import it.unimi.dsi.fastutil.shorts.ShortOpenHashSet
  *
  * @author Tom <rspsmods@gmail.com>
  */
-class VarpSet(val maxVarps: Int) {
+class VarpSet(initialCapacity: Int) {
+    var maxVarps: Int = initialCapacity
+        private set
+
     private val varps =
         mutableListOf<Varp>().apply {
-            for (i in 0 until maxVarps) {
+            for (i in 0 until initialCapacity) {
                 add(Varp(id = i, state = 0))
             }
         }
@@ -21,16 +24,23 @@ class VarpSet(val maxVarps: Int) {
      * This collection should be used only if the revision you are trying to
      * support uses them on the client.
      */
-    private val dirty = ShortOpenHashSet(maxVarps)
+    private val dirty = ShortOpenHashSet(initialCapacity)
 
-    operator fun get(id: Int): Varp = varps[id]
+    operator fun get(id: Int): Varp {
+        ensureCapacity(id)
+        return varps[id]
+    }
 
-    fun getState(id: Int): Int = varps[id].state
+    fun getState(id: Int): Int {
+        ensureCapacity(id)
+        return varps[id].state
+    }
 
     fun setState(
         id: Int,
         state: Int,
     ): VarpSet {
+        ensureCapacity(id)
         varps[id].state = state
         dirty.add(id.toShort())
         return this
@@ -91,4 +101,16 @@ class VarpSet(val maxVarps: Int) {
     }
 
     fun getAll(): List<Varp> = varps
+
+    private fun ensureCapacity(id: Int) {
+        if (id < varps.size) {
+            return
+        }
+
+        for (i in varps.size..id) {
+            varps.add(Varp(id = i, state = 0))
+        }
+
+        maxVarps = varps.size
+    }
 }
